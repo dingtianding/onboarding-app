@@ -3,30 +3,24 @@ services:
   - type: web
     name: onboarding-frontend
     env: node
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://onboarding-backend.onrender.com/api
-    autoDeploy: true
 
   # Backend - Express API
   - type: web
     name: onboarding-backend
     env: node
+    plan: free
     buildCommand: cd server && npm install
     startCommand: cd server && node server.js
     envVars:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        fromDatabase:
-          name: onboarding-db
-          property: connectionString
+        value: mongodb+srv://your-mongodb-atlas-connection-string
       - key: CORS_ORIGIN
-        value: https://onboarding-frontend.onrender.com
-    autoDeploy: true
-
-databases:
-  - name: onboarding-db
-    plan: free 
+        value: https://onboarding-frontend.onrender.com 

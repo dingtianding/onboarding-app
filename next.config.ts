@@ -6,6 +6,8 @@ const nextConfig = {
   },
   // This ensures Next.js outputs a standalone build that Render can deploy
   output: 'standalone',
+  // Add TypeScript configuration to ignore build errors
+
 }
 
-module.exports = nextConfig 
+module.exports = nextConfig

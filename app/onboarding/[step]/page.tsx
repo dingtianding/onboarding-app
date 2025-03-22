@@ -5,11 +5,17 @@ import { useRouter } from 'next/navigation';
 import { getUserById, updateUser, getOnboardingConfig } from '../../../lib/api';
 import { use } from 'react';
 
-export default function OnboardingStep({ params }: { params: { step: string } }) {
+// Update the type definition to match Next.js 15 requirements
+type PageProps = {
+  params: {
+    step: string;
+  };
+};
+
+export default function OnboardingStep({ params }: PageProps) {
   const router = useRouter();
-  // Use React.use() to unwrap the params promise
-  const unwrappedParams = use(params);
-  const step = parseInt(unwrappedParams.step);
+  // Convert step to number
+  const step = parseInt(params.step);
   
   const [user, setUser] = useState<any>(null);
   const [config, setConfig] = useState<any>({
