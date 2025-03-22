@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserById, updateUser, getOnboardingConfig } from '../../../lib/api';
+import { use } from 'react';
 
 export default function OnboardingStep({ params }: { params: { step: string } }) {
   const router = useRouter();
-  const step = parseInt(params.step);
+  // Use React.use() to unwrap the params promise
+  const unwrappedParams = use(params);
+  const step = parseInt(unwrappedParams.step);
   
   const [user, setUser] = useState<any>(null);
   const [config, setConfig] = useState<any>({
@@ -43,10 +46,11 @@ export default function OnboardingStep({ params }: { params: { step: string } })
           // Prefill form with existing data if available
           if (userData.aboutMe) setAboutMe(userData.aboutMe);
           if (userData.address) {
-            if (userData.address.street) setStreet(userData.address.street);
-            if (userData.address.city) setCity(userData.address.city);
-            if (userData.address.state) setState(userData.address.state);
-            if (userData.address.zip) setZip(userData.address.zip);
+            // Fix: Check if address exists before accessing properties
+            userData.address.street && setStreet(userData.address.street);
+            userData.address.city && setCity(userData.address.city);
+            userData.address.state && setState(userData.address.state);
+            userData.address.zip && setZip(userData.address.zip);
           }
           if (userData.birthdate) {
             setBirthdate(new Date(userData.birthdate).toISOString().split('T')[0]);
