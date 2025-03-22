@@ -12,25 +12,34 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create a new user (step 1)
+// Create a new user (signup)
 router.post('/', async (req, res) => {
   try {
+    console.log('Received signup request:', req.body);
+    
     const { email, password } = req.body;
+    
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User already exists with this email' });
     }
     
     // Create new user
     const user = new User({
       email,
-      password,
-      onboardingStep: 2
+      password, // Will be hashed by the pre-save hook
+      onboardingStep: 2,
+      onboardingComplete: false
     });
     
     await user.save();
+    console.log('User created successfully:', user._id);
     
     // Return user without password
     const userResponse = user.toObject();
@@ -38,6 +47,7 @@ router.post('/', async (req, res) => {
     
     res.status(201).json(userResponse);
   } catch (error) {
+    console.error('Error creating user:', error);
     res.status(500).json({ message: error.message });
   }
 });

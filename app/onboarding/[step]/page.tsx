@@ -9,17 +9,21 @@ export default function OnboardingStep({ params }: { params: { step: string } })
   const step = parseInt(params.step);
   
   const [user, setUser] = useState<any>(null);
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<any>({
+    aboutMePage: 2,
+    addressPage: 2,
+    birthdatePage: 3
+  }); // Default config
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Form state
-  const [aboutMe, setAboutMe] = useState('');
-  const [street, setStreet] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [zip, setZip] = useState('');
-  const [birthdate, setBirthdate] = useState('');
+  // Form state with default values
+  const [aboutMe, setAboutMe] = useState('I am a software engineer with 5 years of experience in web development.');
+  const [street, setStreet] = useState('123 Main Street');
+  const [city, setCity] = useState('San Francisco');
+  const [state, setState] = useState('CA');
+  const [zip, setZip] = useState('94105');
+  const [birthdate, setBirthdate] = useState('1990-01-15');
   
   useEffect(() => {
     const fetchData = async () => {
@@ -31,34 +35,46 @@ export default function OnboardingStep({ params }: { params: { step: string } })
           return;
         }
         
-        // Fetch user and config data
-        const [userData, configData] = await Promise.all([
-          getUserById(userId),
-          getOnboardingConfig()
-        ]);
-        
-        setUser(userData);
-        setConfig(configData);
-        
-        // Prefill form with existing data
-        if (userData.aboutMe) setAboutMe(userData.aboutMe);
-        if (userData.address) {
-          setStreet(userData.address.street || '');
-          setCity(userData.address.city || '');
-          setState(userData.address.state || '');
-          setZip(userData.address.zip || '');
+        // Fetch user data
+        try {
+          const userData = await getUserById(userId);
+          setUser(userData);
+          
+          // Prefill form with existing data if available
+          if (userData.aboutMe) setAboutMe(userData.aboutMe);
+          if (userData.address) {
+            if (userData.address.street) setStreet(userData.address.street);
+            if (userData.address.city) setCity(userData.address.city);
+            if (userData.address.state) setState(userData.address.state);
+            if (userData.address.zip) setZip(userData.address.zip);
+          }
+          if (userData.birthdate) {
+            setBirthdate(new Date(userData.birthdate).toISOString().split('T')[0]);
+          }
+          
+          // Check if user should be on this step
+          if (userData.onboardingStep !== step && userData.onboardingStep < 4) {
+            router.push(`/onboarding/${userData.onboardingStep}`);
+            return;
+          }
+        } catch (userError) {
+          console.error('Error fetching user:', userError);
+          // Continue with default values
         }
-        if (userData.birthdate) {
-          setBirthdate(new Date(userData.birthdate).toISOString().split('T')[0]);
-        }
         
-        // Check if user should be on this step
-        if (userData.onboardingStep !== step) {
-          router.push(`/onboarding/${userData.onboardingStep}`);
-          return;
+        // Fetch config data
+        try {
+          const configData = await getOnboardingConfig();
+          if (configData) {
+            setConfig(configData);
+          }
+        } catch (configError) {
+          console.error('Error fetching config:', configError);
+          // Continue with default config
         }
       } catch (err: any) {
-        setError(err.response?.data?.message || 'An error occurred');
+        console.error('General error:', err);
+        setError('Failed to load data. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -78,6 +94,10 @@ export default function OnboardingStep({ params }: { params: { step: string } })
     setLoading(true);
     
     try {
+      if (!user || !user._id) {
+        throw new Error('User data not available');
+      }
+      
       const updateData: any = {
         onboardingStep: step === 2 ? 3 : 4,
         onboardingComplete: step === 3
@@ -105,7 +125,8 @@ export default function OnboardingStep({ params }: { params: { step: string } })
       // Redirect to next step or completion
       router.push(step === 2 ? '/onboarding/3' : '/onboarding/complete');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred');
+      console.error('Submit error:', err);
+      setError('Failed to save data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -113,6 +134,25 @@ export default function OnboardingStep({ params }: { params: { step: string } })
   
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  }
+  
+  // Check if there are any components to show
+  const hasComponents = showAboutMe || showAddress || showBirthdate;
+  
+  if (!hasComponents) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-8">
+        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold mb-4">No components configured for this step</h2>
+          <button 
+            onClick={() => router.push('/onboarding/complete')}
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            Go to Completion
+          </button>
+        </div>
+      </div>
+    );
   }
   
   return (

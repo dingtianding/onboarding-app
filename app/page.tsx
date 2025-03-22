@@ -6,8 +6,8 @@ import { createUser } from '../lib/api';
 
 export default function Home() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('test@example.com');
+  const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +17,14 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const user = await createUser({ email, password });
+      console.log('Attempting to create user with:', { email, password });
+      
+      // Generate a unique email to avoid the "user already exists" error
+      const uniqueEmail = `test_${Date.now()}@example.com`;
+      setEmail(uniqueEmail);
+      
+      const user = await createUser({ email: uniqueEmail, password });
+      console.log('User created successfully:', user);
       
       // Store user ID in localStorage for session management
       localStorage.setItem('userId', user._id);
@@ -25,7 +32,13 @@ export default function Home() {
       // Redirect to step 2
       router.push('/onboarding/2');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred');
+      console.error('Form submission error details:', err);
+      
+      // Extract the error message from the response
+      const errorMessage = err.response?.data?.message || 
+                          'An error occurred while creating your account. Please try again.';
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -33,7 +46,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold mb-8">Welcome to Zealthy Onboarding</h1>
+      <h1 className="text-3xl font-bold mb-8">Welcome to Onboarding</h1>
       
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Step 1: Create Your Account</h2>

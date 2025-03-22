@@ -21,6 +21,18 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/config', configRoutes);
 
+// Add this route to test MongoDB connection
+app.get('/api/test-db', async (req, res) => {
+  try {
+    // Simple query to test the database connection
+    const count = await mongoose.connection.db.collection('users').countDocuments();
+    res.json({ message: 'Database connection successful', count });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(500).json({ message: 'Database connection failed', error: error.message });
+  }
+});
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))

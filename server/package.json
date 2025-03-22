@@ -1,7 +1,7 @@
 {
   "name": "onboarding-server",
   "version": "1.0.0",
-  "description": "Backend for Zealthy onboarding app",
+  "description": "Backend for onboarding app",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
