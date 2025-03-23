@@ -1,7 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/onboarding/[step]/page": "app/onboarding/[step]/page.js",
-  "/onboarding/complete/page": "app/onboarding/complete/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/data/page": "app/data/page.js"
-}

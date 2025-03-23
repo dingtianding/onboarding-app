@@ -1,5 +1,5 @@
-import BackendWakeUp from '../components/BackendWakeUp';
-import Navigation from '../components/Navigation';
+import BackendWakeUp from '../components/util/BackendWakeUp';
+import Navigation from '../components/layout/Navigation';
 import './globals.css';
 
 export const metadata = {

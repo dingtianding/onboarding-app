@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserById, updateUser, getOnboardingConfig } from '../../../lib/api';
-import AboutMeForm from '../../components/AboutMeForm';
-import AddressForm from '../../components/AddressForm';
-import BirthdateForm from '../../components/BirthdateForm';
+import AboutMeForm from '../../../components/forms/AboutMeForm';
+import AddressForm from '../../../components/forms/AddressForm';
+import BirthdateForm from '../../../components/forms/BirthdateForm';
 
 type PageProps = {
   params: {
@@ -13,9 +13,12 @@ type PageProps = {
   };
 };
 
+type FormField = 'aboutMe' | 'address' | 'birthdate';
+type AddressField = 'street' | 'city' | 'state' | 'zip';
+
 export default function OnboardingStep({ params }: PageProps) {
   const router = useRouter();
-  // Convert step to number
+
   const step = parseInt(params.step);
   
   const [user, setUser] = useState<any>(null);
@@ -27,13 +30,27 @@ export default function OnboardingStep({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Form state with default values
-  const [aboutMe, setAboutMe] = useState('I am a software engineer with 5 years of experience in web development.');
-  const [street, setStreet] = useState('123 Main Street');
-  const [city, setCity] = useState('San Francisco');
-  const [state, setState] = useState('CA');
-  const [zip, setZip] = useState('94105');
-  const [birthdate, setBirthdate] = useState('1990-01-15');
+  const [formData, setFormData] = useState({
+    aboutMe: 'I am a software engineer with 5 years of experience in web development.',
+    address: {
+      street: '123 Main Street',
+      city: 'San Francisco',
+      state: 'CA',
+      zip: '94105'
+    },
+    birthdate: '1990-01-15'
+  });
+  
+  const updateFormField = (field: FormField, value: string) => {
+    setFormData(prev => ({...prev, [field]: value}));
+  };
+
+  const updateAddressField = (field: AddressField, value: string) => {
+    setFormData(prev => ({
+      ...prev, 
+      address: {...prev.address, [field]: value}
+    }));
+  };
   
   useEffect(() => {
     const fetchData = async () => {
@@ -51,16 +68,16 @@ export default function OnboardingStep({ params }: PageProps) {
           setUser(userData);
           
           // Prefill form with existing data if available
-          if (userData.aboutMe) setAboutMe(userData.aboutMe);
+          if (userData.aboutMe) updateFormField('aboutMe', userData.aboutMe);
           if (userData.address) {
             // Fix: Check if address exists before accessing properties
-            userData.address.street && setStreet(userData.address.street);
-            userData.address.city && setCity(userData.address.city);
-            userData.address.state && setState(userData.address.state);
-            userData.address.zip && setZip(userData.address.zip);
+            userData.address.street && updateAddressField('street', userData.address.street);
+            userData.address.city && updateAddressField('city', userData.address.city);
+            userData.address.state && updateAddressField('state', userData.address.state);
+            userData.address.zip && updateAddressField('zip', userData.address.zip);
           }
           if (userData.birthdate) {
-            setBirthdate(new Date(userData.birthdate).toISOString().split('T')[0]);
+            updateFormField('birthdate', new Date(userData.birthdate).toISOString().split('T')[0]);
           }
           
           // Check if user should be on this step
@@ -115,20 +132,20 @@ export default function OnboardingStep({ params }: PageProps) {
       };
       
       if (showAboutMe) {
-        updateData.aboutMe = aboutMe;
+        updateData.aboutMe = formData.aboutMe;
       }
       
       if (showAddress) {
         updateData.address = {
-          street,
-          city,
-          state,
-          zip
+          street: formData.address.street,
+          city: formData.address.city,
+          state: formData.address.state,
+          zip: formData.address.zip
         };
       }
       
-      if (showBirthdate && birthdate) {
-        updateData.birthdate = new Date(birthdate);
+      if (showBirthdate && formData.birthdate) {
+        updateData.birthdate = new Date(formData.birthdate);
       }
       
       await updateUser(user._id, updateData);
@@ -145,25 +162,6 @@ export default function OnboardingStep({ params }: PageProps) {
   
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  }
-  
-  // Check if there are any components to show
-  const hasComponents = showAboutMe || showAddress || showBirthdate;
-  
-  if (!hasComponents) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-8">
-        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-semibold mb-4">No components configured for this step</h2>
-          <button 
-            onClick={() => router.push('/onboarding/complete')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-          >
-            Go to Completion
-          </button>
-        </div>
-      </div>
-    );
   }
   
   return (
@@ -201,24 +199,24 @@ export default function OnboardingStep({ params }: PageProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {showAboutMe && (
-            <AboutMeForm aboutMe={aboutMe} setAboutMe={setAboutMe} />
+            <AboutMeForm aboutMe={formData.aboutMe} setAboutMe={(value) => updateFormField('aboutMe', value)} />
           )}
           
           {showAddress && (
             <AddressForm 
-              street={street}
-              city={city}
-              state={state}
-              zip={zip}
-              setStreet={setStreet}
-              setCity={setCity}
-              setState={setState}
-              setZip={setZip}
+              street={formData.address.street}
+              city={formData.address.city}
+              state={formData.address.state}
+              zip={formData.address.zip}
+              setStreet={(value) => updateAddressField('street', value)}
+              setCity={(value) => updateAddressField('city', value)}
+              setState={(value) => updateAddressField('state', value)}
+              setZip={(value) => updateAddressField('zip', value)}
             />
           )}
           
           {showBirthdate && (
-            <BirthdateForm birthdate={birthdate} setBirthdate={setBirthdate} />
+            <BirthdateForm birthdate={formData.birthdate} setBirthdate={(value) => updateFormField('birthdate', value)} />
           )}
           
           <button 

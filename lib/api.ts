@@ -101,7 +101,7 @@ export async function clearDatabase() {
 }
 
 // Add this helper function at the top of your api.ts file
-function logApiRequest(method, url, body = null) {
+function logApiRequest(method: string, url: string, body: any = null) {
   console.log(`🔍 API ${method} Request to: ${url}`);
   if (body) console.log('Request body:', body);
 }

@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAllUsers, clearDatabase } from '../../lib/api';
+import { getAllUsers } from '@/lib/api';
 
 export default function DataPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [clearingDb, setClearingDb] = useState(false);
-  const [clearSuccess, setClearSuccess] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -25,43 +23,6 @@ export default function DataPage() {
     fetchUsers();
   }, []);
 
-  const handleClearDatabase = async () => {
-    if (window.confirm('Are you sure you want to clear the entire database? This action cannot be undone.')) {
-      setClearingDb(true);
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const url = `${apiUrl}/users/clear-all`;
-        
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('The clear database endpoint exists locally but not on the deployed server. Please deploy your backend changes.');
-          }
-          
-          const errorText = await response.text();
-          throw new Error(errorText || `Server responded with status ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        setClearSuccess(true);
-        setUsers([]);
-        setTimeout(() => setClearSuccess(false), 3000);
-      } catch (err: any) {
-        console.error('Error clearing database:', err);
-        setError(`Failed to clear database: ${err.message}`);
-      } finally {
-        setClearingDb(false);
-      }
-    }
-  };
-
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
@@ -77,29 +38,19 @@ export default function DataPage() {
   }
 
   return (
-    <div className="w-full max-w-6xl h-full overflow-auto py-8">
+    <main className="flex min-h-screen flex-col items-center p-8">
       <h1 className="text-3xl font-bold mb-8">User Data</h1>
       
       <div className="w-full max-w-6xl overflow-x-auto">
         <div className="flex justify-between mb-4">
           <h2 className="text-xl font-semibold">All Users ({users.length})</h2>
-          
-          <div className="flex space-x-4">
-            <button 
-              onClick={handleClearDatabase}
-              disabled={clearingDb}
-              className="px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            >
-              {clearingDb ? 'Clearing...' : 'Clear Database'}
-            </button>
-          </div>
+          <a 
+            href="/admin"
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Admin Panel
+          </a>
         </div>
-        
-        {clearSuccess && (
-          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-            Database cleared successfully!
-          </div>
-        )}
         
         {users.length === 0 ? (
           <div className="text-center p-8 bg-gray-50 rounded">
@@ -151,6 +102,6 @@ export default function DataPage() {
           </table>
         )}
       </div>
-    </div>
+    </main>
   );
 } 
