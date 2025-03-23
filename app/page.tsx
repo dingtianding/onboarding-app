@@ -126,10 +126,33 @@ export default function Home() {
     setExistingSession(null);
   };
 
+  // Progress indicator component
+  const ProgressIndicator = () => (
+    <div className="mb-6">
+      <div className="flex items-center">
+        <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 border-indigo-600 rounded-full">
+          <span className="font-medium text-indigo-600">1</span>
+        </div>
+        <div className="ml-4 w-full bg-gray-200 h-1">
+          <div className="bg-gray-200 h-1"></div>
+        </div>
+        <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 border-gray-300 rounded-full">
+          <span className="font-medium text-gray-500">2</span>
+        </div>
+        <div className="ml-4 w-full bg-gray-200 h-1">
+          <div className="bg-gray-200 h-1"></div>
+        </div>
+        <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 border-gray-300 rounded-full">
+          <span className="font-medium text-gray-500">3</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md mx-auto">
       {existingSession ? (
-        <div className="p-6 bg-white rounded-lg shadow-md mb-4">
+        <div className="bg-white rounded-lg shadow-md mb-4 p-6">
           <h2 className="text-xl font-semibold mb-4">You have an incomplete onboarding process</h2>
           <p className="mb-4">Would you like to continue where you left off or start a new session?</p>
           <div className="flex space-x-4">
@@ -148,8 +171,11 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div className="p-6 bg-white rounded-lg shadow-md">
+        <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Step 1: Create Your Account</h2>
+          
+          {/* Add the progress indicator */}
+          <ProgressIndicator />
           
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">

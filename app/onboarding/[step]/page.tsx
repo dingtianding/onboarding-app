@@ -31,6 +31,7 @@ export default function OnboardingStep({ params }: PageProps) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   
   const [formData, setFormData] = useState({
     email: '',
@@ -47,6 +48,14 @@ export default function OnboardingStep({ params }: PageProps) {
   
   const updateFormField = (field: FormField, value: string) => {
     setFormData(prev => ({...prev, [field]: value}));
+    // Clear validation error when field is updated
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const updated = {...prev};
+        delete updated[field];
+        return updated;
+      });
+    }
   };
 
   const updateAddressField = (field: AddressField, value: string) => {
@@ -54,6 +63,14 @@ export default function OnboardingStep({ params }: PageProps) {
       ...prev, 
       address: {...prev.address, [field]: value}
     }));
+    // Clear validation error when address field is updated
+    if (validationErrors[`address.${field}`]) {
+      setValidationErrors(prev => {
+        const updated = {...prev};
+        delete updated[`address.${field}`];
+        return updated;
+      });
+    }
   };
   
   const setDefaultCredentials = () => {
@@ -138,9 +155,52 @@ export default function OnboardingStep({ params }: PageProps) {
   const showAddress = config?.addressPage === step;
   const showBirthdate = config?.birthdatePage === step;
   
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (showAboutMe && !formData.aboutMe.trim()) {
+      errors.aboutMe = 'Please tell us about yourself';
+    }
+    
+    if (showAddress) {
+      if (!formData.address.street.trim()) {
+        errors['address.street'] = 'Street address is required';
+      }
+      if (!formData.address.city.trim()) {
+        errors['address.city'] = 'City is required';
+      }
+      if (!formData.address.state.trim()) {
+        errors['address.state'] = 'State is required';
+      }
+      if (!formData.address.zip.trim()) {
+        errors['address.zip'] = 'ZIP code is required';
+      } else if (!/^\d{5}(-\d{4})?$/.test(formData.address.zip)) {
+        errors['address.zip'] = 'Please enter a valid ZIP code (e.g., 12345 or 12345-6789)';
+      }
+    }
+    
+    if (showBirthdate && !formData.birthdate) {
+      errors.birthdate = 'Please enter your birthdate';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      // Scroll to the first error
+      const firstErrorField = document.querySelector('.error-message');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    
     setSubmitting(true);
     
     try {
@@ -196,72 +256,84 @@ export default function OnboardingStep({ params }: PageProps) {
   };
   
   return (
-    <motion.main 
-      className="flex min-h-screen flex-col items-center justify-center p-8"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <h1 className="text-3xl font-bold mb-8">Complete Your Profile</h1>
+    <div className="w-full max-w-md mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-center">Complete Your Profile</h1>
       
-      <motion.div 
-        className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="mb-6">
-          <div className="flex items-center">
-            <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 1 ? 'border-indigo-600' : 'border-gray-300'} rounded-full transition-colors duration-300`}>
-              <span className={`font-medium ${step >= 1 ? 'text-indigo-600' : 'text-gray-500'}`}>1</span>
-            </div>
-            <div className="ml-4 w-full bg-gray-200 h-1">
-              <motion.div 
-                className="bg-indigo-600 h-1"
-                initial={{ width: step > 1 ? "100%" : "0%" }}
-                animate={{ width: step > 1 ? "100%" : "0%" }}
-                transition={{ duration: 0.5 }}
-              ></motion.div>
-            </div>
-            <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 2 ? 'border-indigo-600' : 'border-gray-300'} rounded-full transition-colors duration-300`}>
-              <span className={`font-medium ${step >= 2 ? 'text-indigo-600' : 'text-gray-500'}`}>2</span>
-            </div>
-            <div className="ml-4 w-full bg-gray-200 h-1">
-              <motion.div 
-                className="bg-indigo-600 h-1"
-                initial={{ width: step > 2 ? "100%" : "0%" }}
-                animate={{ width: step > 2 ? "100%" : "0%" }}
-                transition={{ duration: 0.5 }}
-              ></motion.div>
-            </div>
-            <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 3 ? 'border-indigo-600' : 'border-gray-300'} rounded-full transition-colors duration-300`}>
-              <span className={`font-medium ${step >= 3 ? 'text-indigo-600' : 'text-gray-500'}`}>3</span>
-            </div>
-          </div>
-        </div>
-        
-        <h2 className="text-xl font-semibold mb-4">
-          Step {step}: {step === 1 ? 'Create Account' : (step === 2 ? 'Personal Information' : 'Additional Details')}
-        </h2>
-        
-        {error && (
-          <motion.div 
-            className="mb-4 p-3 bg-red-100 text-red-700 rounded"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {error}
-          </motion.div>
-        )}
-        
-        {loading ? (
+      {loading ? (
+        <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-12 h-12 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600">Moving to next step...</p>
+            <p className="mt-4 text-gray-600">Loading...</p>
           </div>
-        ) : (
+        </div>
+      ) : (
+        <motion.div 
+          className="bg-white rounded-lg shadow-md p-6"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          {/* Progress indicator */}
+          <div className="mb-6">
+            <div className="flex items-center">
+              <motion.div 
+                className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 1 ? 'border-indigo-600' : 'border-gray-300'} rounded-full`}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: step === 1 ? 1.1 : 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <span className={`font-medium ${step >= 1 ? 'text-indigo-600' : 'text-gray-500'}`}>1</span>
+              </motion.div>
+              <div className="ml-4 w-full bg-gray-200 h-1">
+                <motion.div 
+                  className="bg-indigo-600 h-1"
+                  initial={{ width: "0%" }}
+                  animate={{ width: step > 1 ? "100%" : "0%" }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                ></motion.div>
+              </div>
+              <motion.div 
+                className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 2 ? 'border-indigo-600' : 'border-gray-300'} rounded-full`}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: step === 2 ? 1.1 : 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <span className={`font-medium ${step >= 2 ? 'text-indigo-600' : 'text-gray-500'}`}>2</span>
+              </motion.div>
+              <div className="ml-4 w-full bg-gray-200 h-1">
+                <motion.div 
+                  className="bg-indigo-600 h-1"
+                  initial={{ width: "0%" }}
+                  animate={{ width: step > 2 ? "100%" : "0%" }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                ></motion.div>
+              </div>
+              <motion.div 
+                className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 3 ? 'border-indigo-600' : 'border-gray-300'} rounded-full`}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: step === 3 ? 1.1 : 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <span className={`font-medium ${step >= 3 ? 'text-indigo-600' : 'text-gray-500'}`}>3</span>
+              </motion.div>
+            </div>
+          </div>
+          
+          <h2 className="text-xl font-semibold mb-4">
+            Step {step}: {step === 1 ? 'Create Account' : (step === 2 ? 'Personal Information' : 'Additional Details')}
+          </h2>
+          
+          {error && (
+            <motion.div 
+              className="mb-4 p-3 bg-red-100 text-red-700 rounded"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {error}
+            </motion.div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             {showCredentials && (
               <motion.div
@@ -310,6 +382,9 @@ export default function OnboardingStep({ params }: PageProps) {
                 transition={{ duration: 0.4, delay: 0.1 }}
               >
                 <AboutMeForm aboutMe={formData.aboutMe} setAboutMe={(value) => updateFormField('aboutMe', value)} />
+                {validationErrors.aboutMe && (
+                  <p className="mt-1 text-sm text-red-600 error-message">{validationErrors.aboutMe}</p>
+                )}
                 <button 
                   type="button"
                   onClick={setDefaultAboutMe}
@@ -335,6 +410,12 @@ export default function OnboardingStep({ params }: PageProps) {
                   setCity={(value) => updateAddressField('city', value)}
                   setState={(value) => updateAddressField('state', value)}
                   setZip={(value) => updateAddressField('zip', value)}
+                  errors={{
+                    street: validationErrors['address.street'],
+                    city: validationErrors['address.city'],
+                    state: validationErrors['address.state'],
+                    zip: validationErrors['address.zip']
+                  }}
                 />
                 <button 
                   type="button"
@@ -353,6 +434,9 @@ export default function OnboardingStep({ params }: PageProps) {
                 transition={{ duration: 0.4, delay: 0.3 }}
               >
                 <BirthdateForm birthdate={formData.birthdate} setBirthdate={(value) => updateFormField('birthdate', value)} />
+                {validationErrors.birthdate && (
+                  <p className="mt-1 text-sm text-red-600 error-message">{validationErrors.birthdate}</p>
+                )}
                 <button 
                   type="button"
                   onClick={setDefaultBirthdate}
@@ -383,8 +467,8 @@ export default function OnboardingStep({ params }: PageProps) {
               )}
             </motion.button>
           </form>
-        )}
-      </motion.div>
-    </motion.main>
+        </motion.div>
+      )}
+    </div>
   );
 } 
