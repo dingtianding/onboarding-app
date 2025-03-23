@@ -238,20 +238,14 @@ export default function OnboardingStep({ params }: PageProps) {
       
       await updateUser(user._id, updateData);
       
-      // Set loading to true to show transition animation
-      setLoading(true);
-      
-      // Short delay for animation
-      setTimeout(() => {
-        // Redirect to next step or completion
-        router.push(step === 3 ? '/onboarding/complete' : `/onboarding/${step + 1}`);
-      }, 500);
+      // Instead of setting loading to true, use a smooth exit animation
+      // Redirect to next step or completion
+      router.push(step === 3 ? '/onboarding/complete' : `/onboarding/${step + 1}`);
       
     } catch (err: any) {
       console.error('Submit error:', err);
       setError('Failed to save data. Please try again.');
       setSubmitting(false);
-      setLoading(false);
     }
   };
   
@@ -260,17 +254,23 @@ export default function OnboardingStep({ params }: PageProps) {
       <h1 className="text-3xl font-bold mb-8 text-center">Complete Your Profile</h1>
       
       {loading ? (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <motion.div 
+          className="bg-white rounded-lg shadow-md p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-12 h-12 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin"></div>
             <p className="mt-4 text-gray-600">Loading...</p>
           </div>
-        </div>
+        </motion.div>
       ) : (
         <motion.div 
           className="bg-white rounded-lg shadow-md p-6"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4 }}
         >
           {/* Progress indicator */}
