@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserById, updateUser, getOnboardingConfig } from '../../../lib/api';
-import { use } from 'react';
+import AboutMeForm from '../../components/AboutMeForm';
+import AddressForm from '../../components/AddressForm';
+import BirthdateForm from '../../components/BirthdateForm';
 
-// Update the type definition to match Next.js 15 requirements
 type PageProps = {
   params: {
     step: string;
@@ -200,79 +201,24 @@ export default function OnboardingStep({ params }: PageProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {showAboutMe && (
-            <div>
-              <label htmlFor="aboutMe" className="block text-sm font-medium text-gray-700">About Me</label>
-              <textarea 
-                id="aboutMe" 
-                value={aboutMe}
-                onChange={(e) => setAboutMe(e.target.value)}
-                rows={4}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              ></textarea>
-            </div>
+            <AboutMeForm aboutMe={aboutMe} setAboutMe={setAboutMe} />
           )}
           
           {showAddress && (
-            <div className="space-y-3">
-              <div>
-                <label htmlFor="street" className="block text-sm font-medium text-gray-700">Street Address</label>
-                <input 
-                  type="text" 
-                  id="street" 
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700">City</label>
-                <input 
-                  type="text" 
-                  id="city" 
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">State</label>
-                  <input 
-                    type="text" 
-                    id="state" 
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="zip" className="block text-sm font-medium text-gray-700">ZIP Code</label>
-                  <input 
-                    type="text" 
-                    id="zip" 
-                    value={zip}
-                    onChange={(e) => setZip(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-            </div>
+            <AddressForm 
+              street={street}
+              city={city}
+              state={state}
+              zip={zip}
+              setStreet={setStreet}
+              setCity={setCity}
+              setState={setState}
+              setZip={setZip}
+            />
           )}
           
           {showBirthdate && (
-            <div>
-              <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700">Birthdate</label>
-              <input 
-                type="date" 
-                id="birthdate" 
-                value={birthdate}
-                onChange={(e) => setBirthdate(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
+            <BirthdateForm birthdate={birthdate} setBirthdate={setBirthdate} />
           )}
           
           <button 
