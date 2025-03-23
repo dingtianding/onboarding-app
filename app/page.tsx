@@ -126,10 +126,6 @@ export default function Home() {
     setExistingSession(null);
   };
 
-  if (initialLoading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  }
-
   return (
     <div className="w-full max-w-md">
       {existingSession ? (

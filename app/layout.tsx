@@ -1,6 +1,6 @@
 import BackendWakeUp from '../components/util/BackendWakeUp';
 import Navigation from '../components/layout/Navigation';
-import './globals.css';
+import '@/styles/globals.css';
 
 export const metadata = {
   title: 'Onboarding Application',

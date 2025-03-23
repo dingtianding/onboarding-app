@@ -6,6 +6,7 @@ import { getUserById, updateUser, getOnboardingConfig } from '../../../lib/api';
 import AboutMeForm from '../../../components/forms/AboutMeForm';
 import AddressForm from '../../../components/forms/AddressForm';
 import BirthdateForm from '../../../components/forms/BirthdateForm';
+import { motion } from 'framer-motion'; // You'll need to install framer-motion
 
 type PageProps = {
   params: {
@@ -13,7 +14,7 @@ type PageProps = {
   };
 };
 
-type FormField = 'aboutMe' | 'address' | 'birthdate';
+type FormField = 'aboutMe' | 'address' | 'birthdate' | 'email' | 'password';
 type AddressField = 'street' | 'city' | 'state' | 'zip';
 
 export default function OnboardingStep({ params }: PageProps) {
@@ -27,18 +28,21 @@ export default function OnboardingStep({ params }: PageProps) {
     addressPage: 2,
     birthdatePage: 3
   }); // Default config
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   
   const [formData, setFormData] = useState({
-    aboutMe: 'I am a software engineer with 5 years of experience in web development.',
+    email: '',
+    password: '',
+    aboutMe: '',
     address: {
-      street: '123 Main Street',
-      city: 'San Francisco',
-      state: 'CA',
-      zip: '94105'
+      street: '',
+      city: '',
+      state: '',
+      zip: ''
     },
-    birthdate: '1990-01-15'
+    birthdate: ''
   });
   
   const updateFormField = (field: FormField, value: string) => {
@@ -52,6 +56,26 @@ export default function OnboardingStep({ params }: PageProps) {
     }));
   };
   
+  const setDefaultCredentials = () => {
+    updateFormField('email', 'user@example.com');
+    updateFormField('password', 'Password123!');
+  };
+  
+  const setDefaultAboutMe = () => {
+    updateFormField('aboutMe', 'I am a software engineer with 5 years of experience in web development.');
+  };
+  
+  const setDefaultAddress = () => {
+    updateAddressField('street', '123 Main Street');
+    updateAddressField('city', 'San Francisco');
+    updateAddressField('state', 'CA');
+    updateAddressField('zip', '94105');
+  };
+  
+  const setDefaultBirthdate = () => {
+    updateFormField('birthdate', '1990-01-15');
+  };
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -62,15 +86,14 @@ export default function OnboardingStep({ params }: PageProps) {
           return;
         }
         
-        // Fetch user data
         try {
           const userData = await getUserById(userId);
           setUser(userData);
           
           // Prefill form with existing data if available
+          if (userData.email) updateFormField('email', userData.email);
           if (userData.aboutMe) updateFormField('aboutMe', userData.aboutMe);
           if (userData.address) {
-            // Fix: Check if address exists before accessing properties
             userData.address.street && updateAddressField('street', userData.address.street);
             userData.address.city && updateAddressField('city', userData.address.city);
             userData.address.state && updateAddressField('state', userData.address.state);
@@ -103,8 +126,6 @@ export default function OnboardingStep({ params }: PageProps) {
       } catch (err: any) {
         console.error('General error:', err);
         setError('Failed to load data. Please try again.');
-      } finally {
-        setLoading(false);
       }
     };
     
@@ -112,6 +133,7 @@ export default function OnboardingStep({ params }: PageProps) {
   }, [router, step]);
   
   // Determine which components to show on this page
+  const showCredentials = step === 1;
   const showAboutMe = config?.aboutMePage === step;
   const showAddress = config?.addressPage === step;
   const showBirthdate = config?.birthdatePage === step;
@@ -119,7 +141,7 @@ export default function OnboardingStep({ params }: PageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSubmitting(true);
     
     try {
       if (!user || !user._id) {
@@ -130,6 +152,12 @@ export default function OnboardingStep({ params }: PageProps) {
         onboardingStep: step === 2 ? 3 : 4,
         onboardingComplete: step === 3
       };
+      
+      if (showCredentials) {
+        updateData.email = formData.email;
+        // Don't send password in clear text to update endpoint
+        // This would be handled by a proper auth flow
+      }
       
       if (showAboutMe) {
         updateData.aboutMe = formData.aboutMe;
@@ -150,84 +178,213 @@ export default function OnboardingStep({ params }: PageProps) {
       
       await updateUser(user._id, updateData);
       
-      // Redirect to next step or completion
-      router.push(step === 2 ? '/onboarding/3' : '/onboarding/complete');
+      // Set loading to true to show transition animation
+      setLoading(true);
+      
+      // Short delay for animation
+      setTimeout(() => {
+        // Redirect to next step or completion
+        router.push(step === 3 ? '/onboarding/complete' : `/onboarding/${step + 1}`);
+      }, 500);
+      
     } catch (err: any) {
       console.error('Submit error:', err);
       setError('Failed to save data. Please try again.');
-    } finally {
+      setSubmitting(false);
       setLoading(false);
     }
   };
   
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  }
-  
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+    <motion.main 
+      className="flex min-h-screen flex-col items-center justify-center p-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <h1 className="text-3xl font-bold mb-8">Complete Your Profile</h1>
       
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+      <motion.div 
+        className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="mb-6">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 border-indigo-600 rounded-full">
-              <span className="text-indigo-600 font-medium">1</span>
+            <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 1 ? 'border-indigo-600' : 'border-gray-300'} rounded-full transition-colors duration-300`}>
+              <span className={`font-medium ${step >= 1 ? 'text-indigo-600' : 'text-gray-500'}`}>1</span>
             </div>
             <div className="ml-4 w-full bg-gray-200 h-1">
-              <div className="bg-indigo-600 h-1 w-full"></div>
+              <motion.div 
+                className="bg-indigo-600 h-1"
+                initial={{ width: step > 1 ? "100%" : "0%" }}
+                animate={{ width: step > 1 ? "100%" : "0%" }}
+                transition={{ duration: 0.5 }}
+              ></motion.div>
             </div>
-            <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 border-indigo-600 rounded-full">
-              <span className={`font-medium ${step === 2 ? 'text-indigo-600' : 'text-gray-500'}`}>2</span>
+            <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 2 ? 'border-indigo-600' : 'border-gray-300'} rounded-full transition-colors duration-300`}>
+              <span className={`font-medium ${step >= 2 ? 'text-indigo-600' : 'text-gray-500'}`}>2</span>
             </div>
             <div className="ml-4 w-full bg-gray-200 h-1">
-              <div className={`h-1 ${step > 2 ? 'bg-indigo-600 w-full' : 'w-0'}`}></div>
+              <motion.div 
+                className="bg-indigo-600 h-1"
+                initial={{ width: step > 2 ? "100%" : "0%" }}
+                animate={{ width: step > 2 ? "100%" : "0%" }}
+                transition={{ duration: 0.5 }}
+              ></motion.div>
             </div>
-            <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 border-gray-300 rounded-full">
-              <span className={`font-medium ${step === 3 ? 'text-indigo-600' : 'text-gray-500'}`}>3</span>
+            <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 border-2 ${step >= 3 ? 'border-indigo-600' : 'border-gray-300'} rounded-full transition-colors duration-300`}>
+              <span className={`font-medium ${step >= 3 ? 'text-indigo-600' : 'text-gray-500'}`}>3</span>
             </div>
           </div>
         </div>
         
-        <h2 className="text-xl font-semibold mb-4">Step {step}: {step === 2 ? 'Personal Information' : 'Additional Details'}</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Step {step}: {step === 1 ? 'Create Account' : (step === 2 ? 'Personal Information' : 'Additional Details')}
+        </h2>
         
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+          <motion.div 
+            className="mb-4 p-3 bg-red-100 text-red-700 rounded"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             {error}
-          </div>
+          </motion.div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {showAboutMe && (
-            <AboutMeForm aboutMe={formData.aboutMe} setAboutMe={(value) => updateFormField('aboutMe', value)} />
-          )}
-          
-          {showAddress && (
-            <AddressForm 
-              street={formData.address.street}
-              city={formData.address.city}
-              state={formData.address.state}
-              zip={formData.address.zip}
-              setStreet={(value) => updateAddressField('street', value)}
-              setCity={(value) => updateAddressField('city', value)}
-              setState={(value) => updateAddressField('state', value)}
-              setZip={(value) => updateAddressField('zip', value)}
-            />
-          )}
-          
-          {showBirthdate && (
-            <BirthdateForm birthdate={formData.birthdate} setBirthdate={(value) => updateFormField('birthdate', value)} />
-          )}
-          
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300"
-          >
-            {loading ? 'Processing...' : (step === 3 ? 'Complete' : 'Continue')}
-          </button>
-        </form>
-      </div>
-    </main>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-12 h-12 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Moving to next step...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {showCredentials && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={formData.email}
+                      onChange={(e) => updateFormField('email', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                    <input
+                      type="password"
+                      id="password"
+                      value={formData.password}
+                      onChange={(e) => updateFormField('password', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={setDefaultCredentials}
+                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  Use default credentials
+                </button>
+              </motion.div>
+            )}
+            
+            {showAboutMe && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              >
+                <AboutMeForm aboutMe={formData.aboutMe} setAboutMe={(value) => updateFormField('aboutMe', value)} />
+                <button 
+                  type="button"
+                  onClick={setDefaultAboutMe}
+                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  Use default text
+                </button>
+              </motion.div>
+            )}
+            
+            {showAddress && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                <AddressForm 
+                  street={formData.address.street}
+                  city={formData.address.city}
+                  state={formData.address.state}
+                  zip={formData.address.zip}
+                  setStreet={(value) => updateAddressField('street', value)}
+                  setCity={(value) => updateAddressField('city', value)}
+                  setState={(value) => updateAddressField('state', value)}
+                  setZip={(value) => updateAddressField('zip', value)}
+                />
+                <button 
+                  type="button"
+                  onClick={setDefaultAddress}
+                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  Use default address
+                </button>
+              </motion.div>
+            )}
+            
+            {showBirthdate && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                <BirthdateForm birthdate={formData.birthdate} setBirthdate={(value) => updateFormField('birthdate', value)} />
+                <button 
+                  type="button"
+                  onClick={setDefaultBirthdate}
+                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  Use default date
+                </button>
+              </motion.div>
+            )}
+            
+            <motion.button 
+              type="submit" 
+              disabled={submitting}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {submitting ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                step === 3 ? 'Complete' : 'Continue'
+              )}
+            </motion.button>
+          </form>
+        )}
+      </motion.div>
+    </motion.main>
   );
 } 
